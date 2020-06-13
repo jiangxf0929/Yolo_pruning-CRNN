@@ -1,2 +1,2 @@
 # Yolo_pruning-CRNN
- text detection
+ text detection on video
