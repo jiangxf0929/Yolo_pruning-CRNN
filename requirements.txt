@@ -1,0 +1,9 @@
+# pip install -U -r requirements.txt
+numpy
+opencv-python >= 4.1
+torch >= 1.4
+matplotlib
+pycocotools
+tqdm
+pillow
+
