@@ -10,6 +10,7 @@ from utils.utils import *
 from image import union_rbox,adjust_box_to_origin
 from crnn.crnn_torch import crnnOcr as crnnOcr
 from image import  solve,rotate_cut_img,sort_box,get_boxes,letterbox_image
+from answer import output_answer
 
 def crnnRec(im,boxes,leftAdjust=True,rightAdjust=True,alph=0.2,f=1.0):
    """
@@ -22,9 +23,9 @@ def crnnRec(im,boxes,leftAdjust=True,rightAdjust=True,alph=0.2,f=1.0):
        degree,w,h,cx,cy = solve(box)
        partImg,newW,newH = rotate_cut_img(im,degree,box,w,h,leftAdjust,rightAdjust,alph)
        text = crnnOcr(partImg.convert('L'))
-       results.append(text)
+       if text.strip()!=u'':
+           results.append(text)
    return results
-
 
 def detect(save_img=False):
     img_size = (320,192) if ONNX_EXPORT else opt.img_size  # (320, 192) or (416, 256) or (608, 352) for (height, width)
@@ -47,7 +48,7 @@ def detect(save_img=False):
     else:  # darknet format
         load_darknet_weights(model, weights)
 
-    # Second-satage classifier
+    # Second-stage classifier
     classify = False
     if classify:
         modelc = torch_utils.load_classifier(name='resnet101', n=2)  # initialize
@@ -96,6 +97,9 @@ def detect(save_img=False):
     # Run inference
     t0 = time.time()
     output=[]
+    box_num=0
+    text_list=[]
+    sentence_list=[]
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -121,34 +125,50 @@ def detect(save_img=False):
             pred = apply_classifier(pred, modelc, img, im0s)
 
         # Process detections
-        Box=[]
+        
         for i, det in enumerate(pred):  # detections per image
-            p, s = path, ''
-            save_path = './output'#str(Path(out) / Path(p).name)##
+            if webcam:  # batch_size >= 1
+                p, s, im0 = path[i], '%g: ' % i, im0s[i]
+            else:
+                p, s, im0 = path, '', im0s
+
+            save_path = 'output'#str(Path(out) / Path(p).name)##
             s += '%gx%g ' % img.shape[2:]  # print string
             if det is not None and len(det):
                 # Rescale boxes from img_size to im0 size
-                det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0s.shape).round()
+                det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
+
                 # Print results
                 for c in det[:, -1].unique():
                     n = (det[:, -1] == c).sum()  # detections per class
-                    s += '%g %ss, ' % (n, names[int(c)])  # add to string  
+                    s += '%g %ss, ' % (n, names[int(c)])  # add to string
+                Box=[]
                 # Write results
                 for *xyxy, conf, cls in det:
                     xy=[i.numpy()+0
                          for i in xyxy]
                     Box.append([xy[0],xy[1],xy[2],xy[1],xy[2],xy[3],xy[0],xy[3]])
+
+                #如果图中超过两个box且和前一句差别一个box
+                if len(Box)>=2 and (len(Box)-box_num)>=1:
+                    newbox = sort_box(Box)#获取坐标
+                    result = crnnRec(im0*255,newbox,True,True,0.05,1.0)
+                    output.append(result)
+                    for i in result:
+                        with open(save_path + '/text.txt', 'a') as file:
+                            file.write(('%s'  + ';') % (i))
+                        #text_list.append(i)
+                    #output.append(text_list)
+                    with open(save_path + '/text.txt', 'a') as file:
+                          file.write('\n')
+                    file.close
+                    result = " ".join(result)#用空格分开各result
+                    sentence_list.append(result)#得到句子列表
+                box_num=len(Box)#更新box数目
+                #print('文本数目是：%d'%len(Box))#test
+               
             print('%sDone. (%.3fs)' % (s, t2 - t1))
-        newbox = sort_box(Box)
-        result = crnnRec(im0s*255,newbox,True,True,0.01,1.0)
-        for i in result:
-            with open(save_path + '/text.txt', 'a') as file:
-                file.write(('%s'  + ';') % (i))
-        with open(save_path + '/text.txt', 'a') as file:
-            file.write('\n')
-
     print('Done. (%.3fs)' % (time.time() - t0))
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -162,13 +182,15 @@ if __name__ == '__main__':
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
     parser.add_argument('--fourcc', type=str, default='mp4v', help='output video codec (verify ffmpeg support)')
     parser.add_argument('--half', action='store_true', help='half precision FP16 inference')
-    parser.add_argument('--device', default='', help='device id (i.e. 0 or 0,1) or cpu')
+    parser.add_argument('--device', default='cpu', help='device id (i.e. 0 or 0,1) or cpu')
     parser.add_argument('--view-img', action='store_true', help='display results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--classes', nargs='+', type=int, help='filter by class')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     opt = parser.parse_args()
+    print(opt)
 
     with torch.no_grad():
         detect()
+        output_answer("./output/text.txt")#输出答案
