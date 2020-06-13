@@ -1,6 +1,5 @@
 # Yolo_pruning-CRNN
  text detection on video
 # detect-ocr-output.py
- output texts from data/sample/
-# detect-ocr-answer.py
+ detect texts in iamges or videos from data/sample/
  answer the questions from questions.txt
