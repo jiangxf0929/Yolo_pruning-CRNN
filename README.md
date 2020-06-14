@@ -1,7 +1,8 @@
 # Yolo_pruning-CRNN
  Text detection on video
 # detect-ocr-answer.py
- Detect texts in images or videos from data/sample/  answer the questions from questions.txt
+ Detect texts in images or videos from data/sample/  
+ answer the questions from questions.txt
 # detect-ocr-output.py 
  Updating
 # pytorch=1.5.0 and torchvision=0.6.0
