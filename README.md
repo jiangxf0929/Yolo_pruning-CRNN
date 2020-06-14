@@ -5,4 +5,6 @@
 # detect-ocr-output.py 
  Updating
 # pytorch=1.5.0 and torchvision=0.6.0
- https://download.pytorch.org/whl/torch_stable.html
+ https://download.pytorch.org/whl/torch_stable.html  
+ pytorch https://download.pytorch.org/whl/cpu/torch-1.5.0%2Bcpu-cp38-cp38-linux_x86_64.whl  
+ torchvision https://download.pytorch.org/whl/cpu/torchvision-0.6.0%2Bcpu-cp38-cp38-linux_x86_64.whl
