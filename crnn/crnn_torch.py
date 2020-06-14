@@ -52,9 +52,7 @@ def crnnOcr(image):
             
        image       = image.view(1,1, *image.size())
        image       = Variable(image)
-       for i in image:
-            with open('image.txt', 'a') as file:
-                file.write(('%f') % (i))
+
        preds       = model(image)
        #取5530类中，概率最大的类别[16,1,5530]->[16,1]
        _, preds    = preds.max(2)
