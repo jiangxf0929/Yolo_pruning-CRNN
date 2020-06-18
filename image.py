@@ -19,7 +19,7 @@ def sort_box_(box):
 
 
 import numpy as np
-from scipy.spatial import distance as dist
+#from scipy.spatial import distance as dist
 def _order_points(pts):
     # 根据x坐标对点进行排序
     
@@ -318,7 +318,7 @@ def rotate_cut_img(im,degree,box,w,h,leftAdjust=True,rightAdjust=True,alph=0.2):
     return tmpImg,newW,newH
 
 
-from scipy.ndimage import filters,interpolation,morphology,measurements,minimum
+#from scipy.ndimage import filters,interpolation,morphology,measurements,minimum
 #from pylab import amin, amax
 from numpy import amin, amax
 def estimate_skew_angle(raw):
