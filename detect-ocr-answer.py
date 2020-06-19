@@ -1,6 +1,5 @@
 import argparse
 import numpy as np
-import pandas as pd
 from sys import platform
 
 from torch.autograd import Variable
@@ -166,11 +165,11 @@ def detect(save_img=False):
     answer
     read in  questions
     '''
-    question=opt.input
-    q=pd.read_csv(question,header=None,sep=';')
-    question=np.array(q)
+    with open(opt.input,'r') as f:
+        data = f.readlines()
+    question=data[0].split(';')
 
-    for ques in question[0,]:
+    for ques in question:
         exist=False
         for text in output:
             flag=False

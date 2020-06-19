@@ -6,17 +6,16 @@ import shutil
 from pathlib import Path
 
 import cv2
-import matplotlib
-import matplotlib.pyplot as plt
+#import matplotlib
+#import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
 import torchvision
-from tqdm import tqdm
 
 from . import torch_utils  # , google_utils
 
-matplotlib.rc('font', **{'size': 11})
+#matplotlib.rc('font', **{'size': 11})
 
 # Set printoptions
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
