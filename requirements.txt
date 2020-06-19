@@ -1,7 +1,5 @@
-certifi==2020.4.5.2
 future==0.18.2
 numpy==1.18.5
-opencv-contrib-python==4.2.0.34
 Pillow==7.1.2
-torch @ file:///media/jiangxff/disk/torch-1.6.0.dev20200608-cp37-cp37m-linux_x86_64.whl
-torchvision @ file:///media/jiangxff/disk/torchvision-0.7.0.dev20200609-cp37-cp37m-linux_x86_64.whl
+torch-1.6.0a0+503be4e-cp38-cp38-linux_aarch64.whl
+torchvision-0.6.0a0-cp38-cp38-linux_aarch64.whl
