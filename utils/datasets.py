@@ -12,6 +12,7 @@ import numpy as np
 import torch
 from PIL import Image, ExifTags
 from torch.utils.data import Dataset
+from tqdm import tqdm
 
 from utils.utils import xyxy2xywh, xywh2xyxy
 
@@ -75,18 +76,29 @@ class LoadImages:  # for inference
 
     def xunhuan(self):#定义提取帧的循环
         self.lastframe=[]#声明一个空数组
-        self.timeF = 13#
+        self.timeF = 13#每隔13帧读取两个
+        crop_rate=1#视频裁剪比
         for index in range (self.timeF):#一次性读取self.timeF帧
             ret_val, frame_new = self.cap.read()
+            width = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+            height = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            x0=width*(1-crop_rate)/2
+            y0=height*(1-crop_rate)/2
+            x1=width-x0
+            y1=height-y0
+            frame_new=frame_new[int(y0):int(y1),int(x0):int(x1)]#裁剪图片
             self.lastframe.append(frame_new)
             #self.lastframe[index]=frame_new
             self.frame += 1#读到当前帧数,记录的帧数加1
+            if self.frame >= self.nframes-40:  # last video最后几帧退出视频
+                self.cap.release()#关闭视频
+                raise StopIteration
             if not ret_val:#没读取到视频
                 #self.count += 1
                 self.cap.release()#关闭视频
                 #if self.count == self.nF:  # last video最后一帧
                     #raise StopIteration
-                if self.count >= self.nF-60:  # last video最后一帧
+                if self.count == self.nF:  # last video最后几帧
                     raise StopIteration
                 else:
                     path = self.files[self.count]
