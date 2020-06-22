@@ -12,18 +12,19 @@ question_list=[]#问题
 same_ans=[[] for i in range(60)]#相同答案，多行60列
 same_ans_length=[[] for i in range(60)]#多行60列
 
- #读取输出的句子
+ #一、读取输出的句子
 def read_sentence(file_path):
     file=open(file_path)
     for lines in file:
         #word=lines.strip('\n').split(';')
-        sentence2=lines.upper().replace(";"," ").splitlines()#单词间空格分开,句子分开
+        #单词间空格分开,句子分开
+        sentence2=lines.replace("*","").upper().replace(";"," ").splitlines()
         sentence=lines.upper().rstrip(";").splitlines()
         #word=lines.split(' ')
         #for w in word:
             #word_list.append(w)
         for s in sentence2:
-            sentence_list.append(s)    
+            sentence_list.append(s)
     file.close
     return sentence_list
 
@@ -37,7 +38,7 @@ def read_sentence(file_path):
 #print(edit_distance(a,b))
 #print(Levenshtein_Distance(a,b))
 
-#输入问题
+#二、输入问题
 def read_question(file_path):
     file2=open(file_path)
     for lines in file2:
@@ -67,29 +68,29 @@ def read_question(file_path):
 #        answer_list.append(answer)#答案写入列表
 #        same_ans.clear()#清空相同类别答案的列表
 
-#迭代所有句子、答案分类
-def sentence_classify(sentence_list):
+#三、迭代所有句子、答案分类
+def sentence_classify(sentence_list,index):
     i=0
     j=0
     while i<(len(sentence_list)-1):
         d=edit_distance(sentence_list[i],sentence_list[i+1])
         #print("%s和%s的编辑距离是%d"%(sentence_list[i],sentence_list[i+1],d))#test
-        i+=1
-        #编辑距离小的写入一类
-        if(d<=35):
+        
+        #编辑距离小于index的写入一类
+        if(d<=index):
             same_ans[j].append(sentence_list[i])#句子写入第j行
             #same_ans_length[j].append(len(sentence_list[i]))#句子的长度写入
         else:
             j+=1#另起一行
             same_ans[j].append(sentence_list[i])
-    
+        i+=1
     #print(same_ans)
     return same_ans,i,j
 
 
 ans_length=[]#长度
 
-#找到唯一答案
+#四、找到唯一答案
 def find_only_sentence(index,same_ans):
     j=index
     k=0
@@ -107,7 +108,7 @@ def find_only_sentence(index,same_ans):
     #answer_list为唯一答案，各句子间的单词用空格隔开
     return answer_list
 
-#删除问题单词输出“问题：答案”的形式
+#五、删除问题单词输出“问题：答案”的形式
 final_answer_list=[]#最终答案
 def output_final_answer(num,answer_list):#num为编辑距离阈值
     edit_distance_list=[]
@@ -141,29 +142,33 @@ def output_final_answer(num,answer_list):#num为编辑距离阈值
     #print(ans)
     return final_answer_list
 
+#六、输出答案txt
 def write_answer(final_answer_list):
     ans=";".join(final_answer_list)
-    ans=ans.rstrip("\n").replace(';;',';').replace(" ",";")
+    ans=ans.rstrip("\n").replace(" ",";").replace(';;;',';').replace(';;',';')
     #print(ans)
-
     with open("answer.txt","w") as f:
         f.write(ans)
         #for sen in final_answer_list:
         #    f.write(sen+ '\n')
 
+
 def output_answer(file_name):
     #一、读取识别的句子,此处读入txt，程序中直接读入列表然后clear
     sentence_list=read_sentence(file_name)
+    #print(sentence_list)
     #sentence_list=textlist
     #textlist.clear()
-    
+
     #二、读取输入的问题
     question_list=read_question("./question.txt")
     #print(question_list)
 
     #三、找到相似的答案分类
-    same_ans,i,j=sentence_classify(sentence_list)
+    same_ans,i,j=sentence_classify(sentence_list,30)
     sentence_list.clear()
+    #print(same_ans[0])
+    #print(same_ans)
 
     #四、找到相似答案中的唯一
     answer_list=find_only_sentence(j,same_ans)
