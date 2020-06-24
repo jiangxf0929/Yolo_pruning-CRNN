@@ -1,3 +1,0 @@
-data/images/117.jpg
-data/images/118.jpg
-data/images/240.jpg
