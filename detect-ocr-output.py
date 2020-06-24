@@ -91,7 +91,7 @@ if __name__ == '__main__':
     parser.add_argument('--cfg', type=str, default='cfg/prune_0.8_keep_0.1_8_shortcut_yolov3.cfg', help='*.cfg path')
     parser.add_argument('--names', type=str, default='data/text.names', help='*.names path')
     parser.add_argument('--weights', type=str, default='weights/last.weights', help='weights path')
-    parser.add_argument('--source', type=str, default='data/samples', help='source') 
+    parser.add_argument('--source', type=str, default='', help='source') 
     parser.add_argument('--img-size', type=int, default=512, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.1, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
