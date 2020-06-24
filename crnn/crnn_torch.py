@@ -6,35 +6,28 @@ from crnn.utils import strLabelConverter,resizeNormalize
 from crnn.network_torch import CRNN
 from crnn import keys
 from collections import OrderedDict
-from config import ocrModel,LSTMFLAG
-from torchvision import transforms as T
+from config import ocrModel
 
 def crnnSource():
     """
     加载模型
     """
-    if LSTMFLAG is True:
-        alphabet = keys.alphabetEnglish##英文模型
-    else:
-        alphabet = keys.alphabetChinese##英文模型
+    alphabet = keys.alphabetEnglish##英文模型
     converter = strLabelConverter(alphabet)
 
     model = CRNN(32, 1, len(alphabet)+1, 256, 1)
     
-    trainWeights = torch.load(ocrModel,map_location='cpu')
+    trainWeights = torch.load(ocrModel,map_location=lambda storage, loc: storage)
     modelWeights = OrderedDict()
     for k, v in trainWeights.items():
-        name = k.replace('module.','') # remove `module.`
+        name = k.replace('module.','')
         modelWeights[name] = v
-    # load params
     model.load_state_dict(modelWeights)
     return model,converter
 
 ##加载模型
 model,converter = crnnSource()
 model.eval()
-
-
 def crnnOcr(image):
        """
        crnn模型，ocr识别
@@ -46,13 +39,13 @@ def crnnOcr(image):
 
        w = int(w)
        transformer = resizeNormalize((w, 32))
+
        image = transformer(image)
+
        image = image.astype(np.float32)
        image = torch.from_numpy(image)
-            
        image       = image.view(1,1, *image.size())
        image       = Variable(image)
-
        preds       = model(image)
        #取5530类中，概率最大的类别[16,1,5530]->[16,1]
        _, preds    = preds.max(2)

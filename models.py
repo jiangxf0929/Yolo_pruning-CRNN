@@ -1,8 +1,5 @@
-from utils.google_utils import *
 from utils.layers import *
 from utils.parse_config import *
-
-ONNX_EXPORT = False
 
 
 def create_modules(module_defs, img_size):
@@ -68,11 +65,7 @@ def create_modules(module_defs, img_size):
                 modules = maxpool
 
         elif mdef['type'] == 'upsample':
-            if ONNX_EXPORT:  # explicitly state size, avoid scale_factor
-                g = (yolo_index + 1) * 2 / 32  # gain
-                modules = nn.Upsample(size=tuple(int(x * g) for x in img_size))  # img_size = (320, 192)
-            else:
-                modules = nn.Upsample(scale_factor=mdef['stride'])
+            modules = nn.Upsample(scale_factor=mdef['stride'])
 
         elif mdef['type'] == 'route':  # nn.Sequential() placeholder for 'route' layer
             layers = mdef['layers']
@@ -142,8 +135,7 @@ class YOLOLayer(nn.Module):
         self.anchor_vec = self.anchors / self.stride
         self.anchor_wh = self.anchor_vec.view(1, self.na, 1, 1, 2)
 
-        if ONNX_EXPORT:
-            self.create_grids((img_size[1] // stride, img_size[0] // stride))  # number x, y grid points
+        self.create_grids((img_size[1] // stride, img_size[0] // stride))  # number x, y grid points
 
     def create_grids(self, ng=(13, 13), device='cpu'):
         self.nx, self.ny = ng  # x and y grid size
@@ -159,52 +151,15 @@ class YOLOLayer(nn.Module):
             self.anchor_wh = self.anchor_wh.to(device)
 
     def forward(self, p, img_size, out):
-        ASFF = False  # https://arxiv.org/abs/1911.09516
-        if ASFF:
-            i, n = self.index, self.nl  # index in layers, number of layers
-            p = out[self.layers[i]]
-            bs, _, ny, nx = p.shape  # bs, 255, 13, 13
-            if (self.nx, self.ny) != (nx, ny):
-                self.create_grids((nx, ny), p.device)
-
-            # outputs and weights
-            # w = F.softmax(p[:, -n:], 1)  # normalized weights
-            w = torch.sigmoid(p[:, -n:]) * (2 / n)  # sigmoid weights (faster)
-            # w = w / w.sum(1).unsqueeze(1)  # normalize across layer dimension
-
-            # weighted ASFF sum
-            p = out[self.layers[i]][:, :-n] * w[:, i:i + 1]
-            for j in range(n):
-                if j != i:
-                    p += w[:, j:j + 1] * \
-                         F.interpolate(out[self.layers[j]][:, :-n], size=[ny, nx], mode='bilinear', align_corners=False)
-
-        elif ONNX_EXPORT:
-            bs = 1  # batch size
-        else:
-            bs, _, ny, nx = p.shape  # bs, 255, 13, 13
-            if (self.nx, self.ny) != (nx, ny):
-                self.create_grids((nx, ny), p.device)
+        bs, _, ny, nx = p.shape  # bs, 255, 13, 13
+        if (self.nx, self.ny) != (nx, ny):
+            self.create_grids((nx, ny), p.device)
 
         # p.view(bs, 255, 13, 13) -- > (bs, 3, 13, 13, 85)  # (bs, anchors, grid, grid, classes + xywh)
         p = p.view(bs, self.na, self.no, self.ny, self.nx).permute(0, 1, 3, 4, 2).contiguous()  # prediction
 
         if self.training:
             return p
-
-        elif ONNX_EXPORT:
-            # Avoid broadcasting for ANE operations
-            m = self.na * self.nx * self.ny
-            ng = 1 / self.ng.repeat((m, 1))
-            grid = self.grid.repeat((1, self.na, 1, 1, 1)).view(m, 2)
-            anchor_wh = self.anchor_wh.repeat((1, 1, self.nx, self.ny, 1)).view(m, 2) * ng
-
-            p = p.view(m, self.no)
-            xy = torch.sigmoid(p[:, 0:2]) + grid  # x, y
-            wh = torch.exp(p[:, 2:4]) * anchor_wh  # width, height
-            p_cls = torch.sigmoid(p[:, 4:5]) if self.nc == 1 else \
-                torch.sigmoid(p[:, 5:self.no]) * torch.sigmoid(p[:, 4:5])  # conf
-            return p_cls, xy * ng, wh
 
         else:  # inference
             io = p.clone()  # inference output
@@ -296,9 +251,6 @@ class Darknet(nn.Module):
 
         if self.training:  # train
             return yolo_out
-        elif ONNX_EXPORT:  # export
-            x = [torch.cat(x, 0) for x in zip(*yolo_out)]
-            return x[0], torch.cat(x[1:3], 1)  # scores, boxes: 3780x80, 3780x4
         else:  # inference or test
             x, p = zip(*yolo_out)  # inference output, training output
             x = torch.cat(x, 1)  # cat yolo outputs
@@ -385,85 +337,7 @@ def load_darknet_weights(self, weights, cutoff=-1):
             ptr += nw
 
 
-def save_weights(self, path='model.weights', cutoff=-1):
-    # Converts a PyTorch model to Darket format (*.pt to *.weights)
-    # Note: Does not work if model.fuse() is applied
-    with open(path, 'wb') as f:
-        # Write Header https://github.com/AlexeyAB/darknet/issues/2914#issuecomment-496675346
-        self.version.tofile(f)  # (int32) version info: major, minor, revision
-        self.seen.tofile(f)  # (int64) number of images seen during training
-
-        # Iterate through layers
-        for i, (mdef, module) in enumerate(zip(self.module_defs[:cutoff], self.module_list[:cutoff])):
-            if mdef['type'] == 'convolutional':
-                conv_layer = module[0]
-                # If batch norm, load bn first
-                if mdef['batch_normalize']:
-                    bn_layer = module[1]
-                    bn_layer.bias.data.cpu().numpy().tofile(f)
-                    bn_layer.weight.data.cpu().numpy().tofile(f)
-                    bn_layer.running_mean.data.cpu().numpy().tofile(f)
-                    bn_layer.running_var.data.cpu().numpy().tofile(f)
-                # Load conv bias
-                else:
-                    conv_layer.bias.data.cpu().numpy().tofile(f)
-                # Load conv weights
-                conv_layer.weight.data.cpu().numpy().tofile(f)
 
 
-def convert(cfg='cfg/yolov3-spp.cfg', weights='weights/yolov3-spp.weights'):
-    # Converts between PyTorch and Darknet format per extension (i.e. *.weights convert to *.pt and vice versa)
-    # from models import *; convert('cfg/yolov3-spp.cfg', 'weights/yolov3-spp.weights')
-
-    # Initialize model
-    model = Darknet(cfg)
-
-    # Load weights and save
-    if weights.endswith('.pt'):  # if PyTorch format
-        model.load_state_dict(torch.load(weights, map_location='cpu')['model'])
-        save_weights(model, path='converted.weights', cutoff=-1)
-        print("Success: converted '%s' to 'converted.weights'" % weights)
-
-    elif weights.endswith('.weights'):  # darknet format
-        _ = load_darknet_weights(model, weights)
-
-        chkpt = {'epoch': -1,
-                 'best_fitness': None,
-                 'training_results': None,
-                 'model': model.state_dict(),
-                 'optimizer': None}
-
-        torch.save(chkpt, 'converted.pt')
-        print("Success: converted '%s' to 'converted.pt'" % weights)
-
-    else:
-        print('Error: extension not supported.')
 
 
-def attempt_download(weights):
-    # Attempt to download pretrained weights if not found locally
-    msg = weights + ' missing, try downloading from https://drive.google.com/open?id=1LezFG5g3BCW6iYaV89B2i64cqEUZD7e0'
-
-    if weights and not os.path.isfile(weights):
-        d = {'yolov3-spp.weights': '16lYS4bcIdM2HdmyJBVDOvt3Trx6N3W2R',
-             'yolov3.weights': '1uTlyDWlnaqXcsKOktP5aH_zRDbfcDp-y',
-             'yolov3-tiny.weights': '1CCF-iNIIkYesIDzaPvdwlcf7H9zSsKZQ',
-             'yolov3-spp.pt': '1f6Ovy3BSq2wYq4UfvFUpxJFNDFfrIDcR',
-             'yolov3.pt': '1SHNFyoe5Ni8DajDNEqgB2oVKBb_NoEad',
-             'yolov3-tiny.pt': '10m_3MlpQwRtZetQxtksm9jqHrPTHZ6vo',
-             'darknet53.conv.74': '1WUVBid-XuoUBmvzBVUCBl_ELrzqwA8dJ',
-             'yolov3-tiny.conv.15': '1Bw0kCpplxUqyRYAJr9RY9SGnOJbo9nEj',
-             'yolov3-spp-ultralytics.pt': '1UcR-zVoMs7DH5dj3N1bswkiQTA4dmKF4'}
-
-        file = Path(weights).name
-        if file in d:
-            r = gdrive_download(id=d[file], name=weights)
-        else:  # download from pjreddie.com
-            url = 'https://pjreddie.com/media/files/' + file
-            print('Downloading ' + url)
-            r = os.system('curl -f ' + url + ' -o ' + weights)
-
-        # Error check
-        if not (r == 0 and os.path.exists(weights) and os.path.getsize(weights) > 1E6):  # weights exist and > 1MB
-            os.system('rm ' + weights)  # remove partial downloads
-            raise Exception(msg)

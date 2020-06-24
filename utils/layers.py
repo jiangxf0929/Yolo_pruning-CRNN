@@ -1,7 +1,5 @@
 import torch.nn.functional as F
-
 from utils.utils import *
-
 
 class FeatureConcat(nn.Module):
     def __init__(self, layers):
@@ -11,7 +9,6 @@ class FeatureConcat(nn.Module):
 
     def forward(self, x, outputs):
         return torch.cat([outputs[i] for i in self.layers], 1) if self.multiple else outputs[self.layers[0]]
-
 
 class WeightedFeatureFusion(nn.Module):  # weighted sum of 2 or more layers https://arxiv.org/abs/1911.09070
     def __init__(self, layers, weight=False):
@@ -45,7 +42,7 @@ class WeightedFeatureFusion(nn.Module):  # weighted sum of 2 or more layers http
         return x
 
 
-class MixConv2d(nn.Module):  # MixConv: Mixed Depthwise Convolutional Kernels https://arxiv.org/abs/1907.09595
+class MixConv2d(nn.Module):  
     def __init__(self, in_ch, out_ch, k=(3, 5, 7), stride=1, dilation=1, bias=True, method='equal_params'):
         super(MixConv2d, self).__init__()
 
@@ -73,29 +70,3 @@ class MixConv2d(nn.Module):  # MixConv: Mixed Depthwise Convolutional Kernels ht
         return torch.cat([m(x) for m in self.m], 1)
 
 
-# Activation functions below -------------------------------------------------------------------------------------------
-class SwishImplementation(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, i):
-        ctx.save_for_backward(i)
-        return i * torch.sigmoid(i)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        sigmoid_i = torch.sigmoid(ctx.saved_variables[0])
-        return grad_output * (sigmoid_i * (1 + ctx.saved_variables[0] * (1 - sigmoid_i)))
-
-
-class MemoryEfficientSwish(nn.Module):
-    def forward(self, x):
-        return SwishImplementation.apply(x)
-
-
-class Swish(nn.Module):
-    def forward(self, x):
-        return x.mul_(torch.sigmoid(x))
-
-
-class Mish(nn.Module):  # https://github.com/digantamisra98/Mish
-    def forward(self, x):
-        return x.mul_(F.softplus(x).tanh())
