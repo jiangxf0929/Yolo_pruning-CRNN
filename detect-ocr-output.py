@@ -69,22 +69,19 @@ def detect():
                     Box.append([xy[0],xy[1],xy[2],xy[1],xy[2],xy[3],xy[0],xy[3]])
 
                 #如果图中超过两个box且和前一句差别一个box
-                if len(Box)>=2 and (len(Box)-box_num)>=1:
+                if len(Box)>=2 and abs(len(Box)-box_num)>=1:
                     newbox = sort_box(Box)#获取坐标
                     result = crnnRec(im0*255,newbox,True,True,0.05,1.0)
                     output.append(result)
                     for i in result:
                         with open(save_path + '/text.txt', 'a') as file:
                             file.write(('%s'  + ';') % (i))
-                        #text_list.append(i)
-                    #output.append(text_list)
                     with open(save_path + '/text.txt', 'a') as file:
                           file.write('\n')
                     file.close
                     result = " ".join(result)#用空格分开各result
                     sentence_list.append(result)#得到句子列表
                 box_num=len(Box)#更新box数目
-                #print('文本数目是：%d'%len(Box))#test
                
             print('%sDone. (%.3fs)' % (s, t2 - t1))
     print('Done. (%.3fs)' % (time.time() - t0))
