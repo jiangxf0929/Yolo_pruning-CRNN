@@ -9,8 +9,8 @@ sentence_list=[]#句子列表
 #same_num=[]
 answer_list=[]#识别到的文字
 question_list=[]#问题
-same_ans=[[] for i in range(60)]#相同答案，多行60列
-same_ans_length=[[] for i in range(60)]#多行60列
+same_ans=[[] for i in range(500)]#相同答案，多行60列
+same_ans_length=[[] for i in range(500)]#多行60列
 
  #一、读取输出的句子
 def read_sentence(file_path):
@@ -72,19 +72,20 @@ def read_question(file_path):
 def sentence_classify(sentence_list,index):
     i=0
     j=0
+    same_ans[0].append(sentence_list[0])#第一个句子写入第一行
     while i<(len(sentence_list)-1):
         d=edit_distance(sentence_list[i],sentence_list[i+1])
         #print("%s和%s的编辑距离是%d"%(sentence_list[i],sentence_list[i+1],d))#test
-        
         #编辑距离小于index的写入一类
         if(d<=index):
-            same_ans[j].append(sentence_list[i])#句子写入第j行
+            same_ans[j].append(sentence_list[i+1])#句子写入第j行
             #same_ans_length[j].append(len(sentence_list[i]))#句子的长度写入
         else:
             j+=1#另起一行
-            same_ans[j].append(sentence_list[i])
+            same_ans[j].append(sentence_list[i+1])
         i+=1
     #print(same_ans)
+
     return same_ans,i,j
 
 
@@ -166,7 +167,7 @@ def output_answer(file_name):
     #print(question_list)
 
     #三、找到相似的答案分类,编辑距离小的写入一类
-    same_ans,i,j=sentence_classify(sentence_list,6)
+    same_ans,i,j=sentence_classify(sentence_list,10)
     sentence_list.clear()
     #print(same_ans[0])
     #print(same_ans)

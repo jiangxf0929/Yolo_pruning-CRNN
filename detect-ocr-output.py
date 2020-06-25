@@ -6,14 +6,14 @@ from models import *
 from utils.datasets import *
 from utils.utils import *
 from crnn.crnn_torch import crnnOcr as crnnOcr
-from image import  solve,rotate_cut_img,sort_box,get_boxes,letterbox_image
+from image import  solve,rotate_cut_img,sort_box
 from answer import output_answer
 
 def crnnRec(im,boxes,leftAdjust=True,rightAdjust=True,alph=0.2,f=1.0):
    results = []
    im = Image.fromarray(im) 
    for index,box in enumerate(boxes):
-       degree,w,h,cx,cy = solve(box)
+       degree,w,h = solve(box)
        partImg,newW,newH = rotate_cut_img(im,degree,box,w,h,leftAdjust,rightAdjust,alph)
        text = crnnOcr(partImg.convert('L'))
        if text.strip()!=u'':
@@ -36,7 +36,7 @@ def detect():
     sentence_list=[]
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
-        img = img.half() if half else img.float()  # uint8 to fp16/32
+        img = img.float()
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
         if img.ndimension() == 3:
             img = img.unsqueeze(0)
