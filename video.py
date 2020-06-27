@@ -19,14 +19,14 @@ def crnnRec(im,boxes,leftAdjust=True,rightAdjust=True,alph=0.2,f=1.0):
            results.append(text)
    return results
 
-def detect(source,question):
+def detect(source):
     img_size = 512
     weights = 'Yolo_pruning-CRNN/weights/last.weights'
     device ='cpu'
     model = Darknet('Yolo_pruning-CRNN/cfg/prune_0.8_keep_0.1_8_shortcut_yolov3.cfg', img_size)
     load_darknet_weights(model, weights)
     model.to(device).eval()
-    dataset = LoadImages('Yolo_pruning-CRNN/'+source, img_size=img_size)
+    dataset = LoadImages(source, img_size=img_size)
     names = load_classes('Yolo_pruning-CRNN/data/text.names')
     t0 = time.time()
     output=[]

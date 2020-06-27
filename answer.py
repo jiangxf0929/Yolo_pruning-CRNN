@@ -190,21 +190,21 @@ def output_answer(file_name):
 #output_answer("./text-yolo-pruning.txt")
 #output_answer("./text.txt")
 
-def output_answer_from_list(sentence_list):
+def output_answer_from_list(sentence_list,question):
     
-    question_list=read_question("Yolo_pruning-CRNN/question.txt")
+    question_list=read_question(question)
     #print(question_list)
 
     #三、找到相似的答案分类,编辑距离小的写入一类
     same_ans,i,j=sentence_classify(sentence_list,10)
     sentence_list.clear()
     #print(same_ans[0])
-    print(same_ans)
+    #print(same_ans)
 
     #四、找到相似答案中的唯一
     answer_list=find_only_sentence(j,same_ans)
     same_ans.clear()
-    print(answer_list)
+    #print(answer_list)
 
     #五、删除问题单词输出“问题：答案”的形式
     final_answer_list=output_final_answer(1,answer_list)
@@ -216,19 +216,3 @@ def output_answer_from_list(sentence_list):
     write_answer(final_answer_list)
     final_answer_list.clear()
 
-def output_answer_from_list2(sentence_list):
-   
-    #二、读取输入的问题
-    question_list=read_question(".Yolo_pruning-CRNN/question.txt")
-    #print(question_list)
-
-    
-    #五、删除问题单词输出“问题：答案”的形式
-    final_answer_list=output_final_answer(1,sentence_list)
-    #print(final_answer_list)
-    answer_list.clear()
-    question_list.clear()
-
-    #六、写入txt文件
-    write_answer(final_answer_list)
-    final_answer_list.clear()

@@ -16,6 +16,6 @@ def main():
 		$ python3 solution/ video.mp4 questions.txt
 		Only the last line will be monitored by the power meter for efficiency and performance.
 	"""
-	text=video.detect(sys.argv[1],sys.argv[2])
-	answer.output_answer_from_list(text)
+	text=video.detect(sys.argv[1])
+	answer.output_answer_from_list(text,sys.argv[2])
 
