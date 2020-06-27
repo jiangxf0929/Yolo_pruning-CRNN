@@ -5,5 +5,7 @@
 # pytorch-nightly  
  https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html  
 # Run demo.jpg or demo.avi
- python detect-ocr-output.py
- 
+ cd Yolo_pruning-CRNN  
+ put video.mp4 in
+ cd ../
+ python Yolo_pruning-CRNN/ video.mp4 questions.txt
