@@ -9,4 +9,4 @@
  put video.mp4 and questions.txt in  
  pip install requestment.txt  
  cd ../  
- python Yolo_pruning-CRNN/ video.mp4 questions.txt  
+ python3 Yolo_pruning-CRNN/ video.mp4 questions.txt  
