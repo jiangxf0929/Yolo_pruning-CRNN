@@ -6,7 +6,7 @@
  https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html  
 # Run demo.jpg or demo.avi
  cd Yolo_pruning-CRNN  
- put video.mp4 in  
+ put video.mp4 and questions.txt in  
  pip requestment.txt  
  cd ../  
  python Yolo_pruning-CRNN/ video.mp4 questions.txt  
