@@ -7,6 +7,6 @@
 # Run demo.jpg or demo.avi
  cd Yolo_pruning-CRNN  
  put video.mp4 and questions.txt in  
- pip requestment.txt  
+ pip install requestment.txt  
  cd ../  
  python Yolo_pruning-CRNN/ video.mp4 questions.txt  
