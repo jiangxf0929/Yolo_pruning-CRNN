@@ -83,10 +83,6 @@ class LoadImages:  # for inference
             
             #self.lastframe[index]=frame_new
             self.frame += 1#读到当前帧数,记录的帧数加1
-            if self.frame >= self.nframes-40:  # last video最后几帧退出视频
-                self.cap.release()#关闭视频
-                raise StopIteration
-
             if not ret_val:#没读取到视频
                 self.cap.release()#关闭视频
                 if self.count == self.nF:  # last video最后一个视频
@@ -124,17 +120,6 @@ class LoadImages:  # for inference
         if self.video_flag[self.count]:
             # Read video读取视频
             self.mode = 'video'
-            #ret_val, img0 = self.cap.read()
-            #if not ret_val:#没读取到视频
-            #    self.count += 1
-            #    self.cap.release()#关闭视频
-            #    if self.count == self.nF:  # last video
-            #        raise StopIteration
-            #    else:
-            #        path = self.files[self.count]
-            #        self.new_video(path)
-            #        ret_val, img0 = self.cap.read()
-
 
             
             thr=self.xunhuan()
