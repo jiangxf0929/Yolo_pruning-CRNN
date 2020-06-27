@@ -29,22 +29,10 @@ class LoadImages:  # for inference
     
     def __init__(self, path, img_size=416):#传入path和图片大小
         path = str(Path(path))  # os-agnostic
-        files = []
-        if os.path.isdir(path):
-            files = sorted(glob.glob(os.path.join(path, '*.*')))
-        elif os.path.isfile(path):
-            files = [path]
-
-        videos = [x for x in files if os.path.splitext(x)[-1].lower() in vid_formats]
-        
         self.img_size = img_size
-        self.files = videos
-        self.nF = len(videos)  # number of files文件总数
-        if any(videos):
-            self.new_video(videos[0])  # new video
-        else:
-            self.cap = None
-        assert self.nF > 0, 'No videos found in ' + path
+        self.path_name=path
+        self.nF = 1  
+        self.new_video(path)
 
     def tiaozhen(self):
         jump_frame=5#每次读取到图片进行跳帧
@@ -53,12 +41,7 @@ class LoadImages:  # for inference
             self.frame += 1#读到当前帧数,记录的帧数加1
             if not ret_val:#没读取到视频
                 self.cap.release()#关闭视频
-                if self.count == self.nF:  # last video最后一个视频
-                    raise StopIteration
-                else:
-                    path = self.files[self.count]
-                    self.new_video(path)
-                    #ret_val, img0 = self.cap.read()
+                raise StopIteration
 
     def xunhuan(self):#定义提取帧的循环
         self.lastframe=[]#声明一个空数组
@@ -71,13 +54,7 @@ class LoadImages:  # for inference
             self.frame += 1#读到当前帧数,记录的帧数加1
             if not ret_val:#没读取到视频
                 self.cap.release()#关闭视频
-                if self.count == self.nF:  # last video最后一个视频
-                    raise StopIteration
-                else:
-                    path = self.files[self.count]
-                    self.new_video(path)
-                    #ret_val, img0 = self.cap.read()
-            
+                raise StopIteration
             width = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
             height = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
             x0=width*(1-crop_rate_width)/2
@@ -100,8 +77,7 @@ class LoadImages:  # for inference
     def __next__(self):#含有__next__()函数的对象都是一个迭代器
         if self.count == self.nF:
             raise StopIteration
-        path = self.files[self.count]
-
+        path=self.path_name
         self.mode = 'video'
         thr=self.xunhuan()
         while thr>=0:
