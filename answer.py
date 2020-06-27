@@ -149,7 +149,7 @@ def write_answer(final_answer_list):
     #ans=ans.rstrip("\n").replace(" ",";").replace(';;;',';').replace(';;',';')
     ans=ans.replace('   ',' ').replace('  ',' ').replace('\n','')
     #print(ans)
-    with open("answer.txt","w") as f:
+    with open("answers.txt","w") as f:
         f.write(ans)
         #for sen in final_answer_list:
         #    f.write(sen+ '\n')
