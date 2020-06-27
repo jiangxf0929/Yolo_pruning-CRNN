@@ -21,13 +21,13 @@ def crnnRec(im,boxes,leftAdjust=True,rightAdjust=True,alph=0.2,f=1.0):
 
 def detect(source,question):
     img_size = 512
-    weights = 'solution/weights/last.weights'
+    weights = 'Yolo_pruning-CRNN/weights/last.weights'
     device ='cpu'
-    model = Darknet('solution/cfg/prune_0.8_keep_0.1_8_shortcut_yolov3.cfg', img_size)
+    model = Darknet('Yolo_pruning-CRNN/cfg/prune_0.8_keep_0.1_8_shortcut_yolov3.cfg', img_size)
     load_darknet_weights(model, weights)
     model.to(device).eval()
-    dataset = LoadImages('solution/'+source, img_size=img_size)
-    names = load_classes('solution/data/text.names')
+    dataset = LoadImages('Yolo_pruning-CRNN/'+source, img_size=img_size)
+    names = load_classes('Yolo_pruning-CRNN/data/text.names')
     t0 = time.time()
     output=[]
     box_num=0
@@ -52,8 +52,6 @@ def detect(source,question):
         # Process detections
         for i, det in enumerate(pred):  # detections per image
             p, s, im0 = path, '', im0s
-            save_path = 'output'#str(Path(out) / Path(p).name)##
-            s += '%gx%g ' % img.shape[2:]  # print string
             if det is not None and len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()

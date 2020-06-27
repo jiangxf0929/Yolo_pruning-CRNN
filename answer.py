@@ -192,7 +192,7 @@ def output_answer(file_name):
 
 def output_answer_from_list(sentence_list):
     
-    question_list=read_question("./question.txt")
+    question_list=read_question("Yolo_pruning-CRNN/question.txt")
     #print(question_list)
 
     #三、找到相似的答案分类,编辑距离小的写入一类
@@ -219,7 +219,7 @@ def output_answer_from_list(sentence_list):
 def output_answer_from_list2(sentence_list):
    
     #二、读取输入的问题
-    question_list=read_question("./question.txt")
+    question_list=read_question(".Yolo_pruning-CRNN/question.txt")
     #print(question_list)
 
     
