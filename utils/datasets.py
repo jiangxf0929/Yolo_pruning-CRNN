@@ -15,8 +15,6 @@ from torch.utils.data import Dataset
 
 from utils.utils import xyxy2xywh, xywh2xyxy
 
-help_url = 'https://github.com/ultralytics/yolov3/wiki/Train-Custom-Data'
-img_formats = ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.dng']
 vid_formats = ['.mov', '.avi', '.mp4']
 
 def diffimage(src_1,src_2):#帧差法
@@ -26,27 +24,6 @@ def diffimage(src_1,src_2):#帧差法
     src_2 = src_2.astype(np.int)
     diff = abs(src_1 - src_2)
     return diff.astype(np.uint8)
-
-# Get orientation exif tag
-for orientation in ExifTags.TAGS.keys():
-    if ExifTags.TAGS[orientation] == 'Orientation':
-        break
-
-
-def exif_size(img):
-    # Returns exif-corrected PIL size
-    s = img.size  # (width, height)
-    try:
-        rotation = dict(img._getexif().items())[orientation]
-        if rotation == 6:  # rotation 270
-            s = (s[1], s[0])
-        elif rotation == 8:  # rotation 90
-            s = (s[1], s[0])
-    except:
-        pass
-
-    return s
-
 
 class LoadImages:  # for inference
     
@@ -58,34 +35,17 @@ class LoadImages:  # for inference
         elif os.path.isfile(path):
             files = [path]
 
-        images = [x for x in files if os.path.splitext(x)[-1].lower() in img_formats]
         videos = [x for x in files if os.path.splitext(x)[-1].lower() in vid_formats]
-        nI, nV = len(images), len(videos)
-
+        
         self.img_size = img_size
-        self.files = images + videos
-        self.nF = nI + nV  # number of files文件总数
-        self.video_flag = [False] * nI + [True] * nV
-        self.mode = 'images'
+        self.files = videos
+        self.nF = len(videos)  # number of files文件总数
         if any(videos):
             self.new_video(videos[0])  # new video
         else:
             self.cap = None
-        assert self.nF > 0, 'No images or videos found in ' + path
+        assert self.nF > 0, 'No videos found in ' + path
 
-    def tiaozhen(self):
-        jump_frame=5#每次读取到图片进行跳帧
-        for index in range(jump_frame):
-            ret_val, frame_new = self.cap.read()
-            self.frame += 1#读到当前帧数,记录的帧数加1
-            if not ret_val:#没读取到视频
-                self.cap.release()#关闭视频
-                if self.count == self.nF:  # last video最后一个视频
-                    raise StopIteration
-                else:
-                    path = self.files[self.count]
-                    self.new_video(path)
-                    #ret_val, img0 = self.cap.read()
 
     def xunhuan(self):#定义提取帧的循环
         self.lastframe=[]#声明一个空数组
@@ -129,30 +89,20 @@ class LoadImages:  # for inference
             raise StopIteration
         path = self.files[self.count]
 
-
-        if self.video_flag[self.count]:
-            self.mode = 'video'
-            thr=self.xunhuan()
-            while thr>=0:
-                if  thr<=self.yuzhi:
-                    img0=self.lastframe[(self.timeF//2)]
-                    self.keyframe+=1
-                    #self.tiaozhen()#是否跳帧
-                    break
-                if thr>self.yuzhi:
-                    thr=self.xunhuan()
+        self.mode = 'video'
+        thr=self.xunhuan()
+        while thr>=0:
+            if  thr<=self.yuzhi:
+                img0=self.lastframe[(self.timeF//2)]
+                self.keyframe+=1
+                break
+            if thr>self.yuzhi:
+                thr=self.xunhuan()
 
 
-            print('video %g/%g (%g/%g) %s keyframe_num %g : ' % (self.count+1, self.nF, self.frame, self.nframes, path,self.keyframe), end='')
-            #如video 1/1 （2/7200）xxx.mp4字样
-
-        else:
-            # Read image读取图片
-            self.count += 1
-            img0 = cv2.imread(path)  # BGR
-            assert img0 is not None, 'Image Not Found ' + path
-            print('image %g/%g %s: ' % (self.count, self.nF, path), end='')
-
+        print('video %g/%g (%g/%g) %s keyframe_num %g : ' % (self.count+1, self.nF, self.frame, self.nframes, path,self.keyframe), end='')
+        #如video 1/1 （2/7200）xxx.mp4字样
+        
         # Padded resize
         img = letterbox(img0, new_shape=self.img_size)[0]
 
