@@ -116,25 +116,16 @@ def detect(source):
         # Inference
         t1 = time.time()
         pred = model(img)[0]
-        t2 = time.time()
         # Apply NMS
         conf_thres=0.1
         iou_thres=0.5
-        pred = non_max_suppression(pred, conf_thres, iou_thres,
-                                   multi_label=False)
-        # Process detections
-        for i, det in enumerate(pred):  # detections per image
-            if det is not None and len(det):
-                # Rescale boxes from img_size to im0 size
-                det[:, :4] = scale_coords(img.shape[2:], det[:, :4], img0.shape).round()
-                Box=[]
-                # Write results
-                for *xyxy, conf, cls in det:
-                    xy=[i.detach().numpy()+0
-                         for i in xyxy]
-                    Box.append([xy[0],xy[1],xy[2],xy[1],xy[2],xy[3],xy[0],xy[3]])
-
-                #如果图中超过两个box且和前一句差别一个box
+        pred = non_max_suppression(pred, conf_thres, iou_thres)
+        det=pred[0]
+        det[:, :4] = scale_coords(img.shape[2:], det[:, :4], img0.shape).round()
+        Box=[]
+        for *xyxy, conf, cls in det:
+            xy=[i.detach().numpy()+0 for i in xyxy]
+            Box.append([xy[0],xy[1],xy[2],xy[1],xy[2],xy[3],xy[0],xy[3]])
         if len(Box)>=2 and abs(len(Box)-box_num)>=1:
             newbox = sort_box(Box)#获取坐标
             result = crnnRec(img0*255,newbox,True,True,0.05,1.0)
@@ -142,6 +133,7 @@ def detect(source):
             result=result.replace("*","").upper().replace("  "," ")
             sentence_list.append(result)#得到句子列表
             box_num=len(Box)#更新box数目
+            t2 = time.time()
             print('Done. (%.3fs)' % (t2 - t1))   
         else:
             continue      
