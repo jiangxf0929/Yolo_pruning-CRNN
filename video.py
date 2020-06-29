@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import time
+import threading
 from PIL import Image, ExifTags
 from torch.autograd import Variable
 from models import *  
@@ -8,6 +9,31 @@ from utils.utils import *
 from crnn.crnn_torch import crnnOcr as crnnOcr
 from image import  solve,rotate_cut_img,sort_box
 
+sentence_list=[]
+
+
+class Mythread(threading.Thread):
+   def __init__(self,func,args,):
+      threading.Thread.__init__(self)
+      self.func = func
+      self.args = args 
+   def run(self):
+      self.res=self.func(*self.args)
+   def getResult(self):
+      return self.res
+
+def Ocr(img0,Box):
+   newbox = sort_box(Box)#获取坐标
+   t4=time.time()
+   result = crnnRec(img0*255,newbox,True,True,0.05,1.0)
+   result = " ".join(result)#用空格分开各result
+   result=result.replace("*","").upper().replace("  "," ")
+   #sentence_list.append(result)#得到句子列表
+   t2 = time.time()
+   print('CRNN. (%.3fs)' % (t2 - t4))
+   return result
+   
+   
 def crnnRec(im,boxes,leftAdjust=True,rightAdjust=True,alph=0.2,f=1.0):
    results = []
    im = Image.fromarray(im) 
@@ -68,10 +94,6 @@ def detect(source):
     model.to(device).eval()
     names = load_classes('Yolo_pruning-CRNN/data/text.names')
     t0 = time.time()
-    output=[]
-    box_num=0
-    text_list=[]
-    sentence_list=[]
     #video
     threshold=15
     timeF = 11
@@ -80,6 +102,8 @@ def detect(source):
     vidcap = cv2.VideoCapture(source)
     success=True
     cnt=0
+    box_num=0
+    threads = []
     while success:
         success,img = vidcap.read()
         if not success:
@@ -120,22 +144,25 @@ def detect(source):
         conf_thres=0.1
         iou_thres=0.5
         pred = non_max_suppression(pred, conf_thres, iou_thres)
+        if pred==[None]:
+            continue
         det=pred[0]
         det[:, :4] = scale_coords(img.shape[2:], det[:, :4], img0.shape).round()
         Box=[]
         for *xyxy, conf, cls in det:
             xy=[i.detach().numpy()+0 for i in xyxy]
             Box.append([xy[0],xy[1],xy[2],xy[1],xy[2],xy[3],xy[0],xy[3]])
+        t3=time.time()
+        print('YoLo. (%.3fs)' % (t3 - t1))
         if len(Box)>=2 and abs(len(Box)-box_num)>=1:
-            newbox = sort_box(Box)#获取坐标
-            result = crnnRec(img0*255,newbox,True,True,0.05,1.0)
-            result = " ".join(result)#用空格分开各result
-            result=result.replace("*","").upper().replace("  "," ")
-            sentence_list.append(result)#得到句子列表
-            box_num=len(Box)#更新box数目
-            t2 = time.time()
-            print('Done. (%.3fs)' % (t2 - t1))   
+            box_num=len(Box)#更新box数目 
+            t = Mythread(Ocr,(img0,Box))
+            threads.append(t)
         else:
-            continue      
+            continue
+    for i in range(len(threads)):
+        threads[i].start()
+    for i in range(len(threads)):
+        threads[i].join()
+        sentence_list.append(threads[i].getResult())  
     print('Done. (%.3fs)' % (time.time() - t0))
-    return sentence_list

@@ -69,6 +69,7 @@ def clip_coords(boxes, img_shape):
     boxes[:, 3].clamp_(0, img_shape[0])  # y2
                 
 
+
 def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, classes=None, agnostic=False,multi_label=False):
 
     # Box constraints
@@ -79,6 +80,8 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, classes=None,
     output = [None] * len(prediction)
     x = prediction[0]
     x = x[x[:, 4] > conf_thres]
+    if not x.shape[0]:
+        return output
     x = x[((x[:, 2:4] > min_wh) & (x[:, 2:4] < max_wh)).all(1)]
     x[..., 5:] *= x[..., 4:5]
     box = xywh2xyxy(x[:, :4])
