@@ -115,7 +115,7 @@ def detect(source):
             img = img.unsqueeze(0)
         # Inference
         t1 = time.time()
-        pred = model(img)[0]
+        pred = model(img)
         # Apply NMS
         conf_thres=0.1
         iou_thres=0.5
