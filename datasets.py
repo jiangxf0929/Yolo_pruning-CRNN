@@ -53,12 +53,7 @@ class LoadImages:  # for inference
             self.frame += 1#读到当前帧数,记录的帧数加1
             if not ret_val:#没读取到视频
                 self.cap.release()#关闭视频
-                if self.count == self.nF:  # last video最后一个视频
-                    raise StopIteration
-                else:
-                    path = self.files[self.count]
-                    self.new_video(path)
-                    #ret_val, img0 = self.cap.read()
+                raise StopIteration
 
     def xunhuan(self):#定义提取帧的循环
         self.lastframe=[]#声明一个空数组
@@ -71,13 +66,8 @@ class LoadImages:  # for inference
             self.frame += 1#读到当前帧数,记录的帧数加1
             if not ret_val:#没读取到视频
                 self.cap.release()#关闭视频
-                if self.count == self.nF:  # last video最后一个视频
-                    raise StopIteration
-                else:
-                    path = self.files[self.count]
-                    self.new_video(path)
-                    #ret_val, img0 = self.cap.read()
-            
+                raise StopIteration
+
             width = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
             height = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
             x0=width*(1-crop_rate_width)/2
