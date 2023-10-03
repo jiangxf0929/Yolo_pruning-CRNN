@@ -1,6 +1,6 @@
 future==0.18.2
 numpy==1.18.5
-Pillow==7.1.2
+Pillow==10.0.1
 torch-1.6.0a0+503be4e-cp38-cp38-linux_aarch64.whl
 torchvision-0.6.0a0-cp38-cp38-linux_aarch64.whl
 nltk
